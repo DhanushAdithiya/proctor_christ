@@ -1,49 +1,15 @@
 "use client";
 
-import { redirect } from "next/navigation";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { useState, useEffect, useMemo } from "react";
-import { cn } from "@/lib/utils";
-import BreadCrumbs from "../components/breadcrumbs";
 import { usePathname } from "next/navigation";
-import { getAllClasses, getAllEvaluatorClasses } from "@/app/actions/fetchClassDetails";
 import { getFormattedTime } from "../actions/helpers";
+import BreadCrumbs from "../components/breadcrumbs";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { Card, CardContent } from "@/components/ui/card";
+import { useState } from "react";
+import { SubjectData } from "../admin/page";
 
-
-export interface SubjectData {
-  name: string;
-  id: number;
-}
-
-function populateData(dbResponse: any[]) {
-  const batches = new Set<string>();
-  const years = new Set<number>();
-  const subjects: SubjectData[] = [];
-
-  dbResponse.forEach((element: any) => {
-    if (element.class) {
-      batches.add(element.class);
-    }
-    if (element.batch) {
-      years.add(element.batch);
-    }
-    if (element.name && element.classCode) {
-      // Avoid duplicate subjects
-      if (!subjects.some((s) => s.id === element.classCode)) {
-        subjects.push({ name: element.name, id: element.classCode });
-      }
-    }
-  });
-
-  return {
-    batches: Array.from(batches).sort((a, b) => a.localeCompare(b)),
-    years: Array.from(years).sort((a, b) => b - a),
-    subjects,
-  };
-}
-
-export default function AdminDashboard() {
+export default function StudentDashboard() {
   const [selectedBatch, setSelectedBatch] = useState<string>("all");
   const [selectedYear, setSelectedYear] = useState<string>("all");
   const [classes, setClasses] = useState<any[]>([]);
@@ -52,44 +18,8 @@ export default function AdminDashboard() {
   const [subjects, setSubjects] = useState<SubjectData[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const teacher =
-    typeof window !== "undefined" ? sessionStorage.getItem("teacher") : null;
-  const name =
-    typeof window !== "undefined" ? sessionStorage.getItem("name") : "";
-
-  useEffect(() => {
-    getAllEvaluatorClasses(sessionStorage.getItem("regno") || "0").then((data) => {
-      const populated = populateData(data);
-      setClasses(data);
-      setBatches(populated.batches);
-      setYears(populated.years);
-      setSubjects(populated.subjects);
-      setLoading(false);
-    });
-  }, []);
-
-  const filteredSubjects = useMemo(() => {
-    return subjects
-      .filter((subj) => {
-        const classItem = classes.find((c) => c.classCode === subj.id);
-        if (!classItem) return false;
-        const batchMatch =
-          selectedBatch === "all" || classItem.class === selectedBatch;
-        const yearMatch =
-          selectedYear === "all" || classItem.batch === Number(selectedYear);
-        return batchMatch && yearMatch;
-      })
-      .sort((a, b) => a.name.localeCompare(b.name));
-  }, [subjects, classes, selectedBatch, selectedYear]);
-
-  if (!teacher) redirect("/login");
-  if (teacher === "no") redirect("/student");
-  if (loading)
-    return (
-      <div className="flex justify-center items-center h-screen text-lg">
-        Loading...
-      </div>
-    );
+  const register = sessionStorage.getItem("regno");
+  const name = sessionStorage.getItem("name");
 
   const assignedItems = [
     "Task 1",
@@ -195,25 +125,27 @@ export default function AdminDashboard() {
       <div className="w-full">
         <div className="text-lg font-semibold mb-4">Subjects</div>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-          <a href="/admin/create-class">
+          <a href="/student/join-class">
             <Card className="cursor-pointer hover:shadow-lg transition-shadow">
               <CardContent className="flex items-center justify-center text-center p-4 h-28 w-full min-w-[120px] sm:min-w-[140px] min-h-[112px] sm:min-h-[112px]">
                 <span className="text-4xl text-muted-foreground">+</span>
               </CardContent>
             </Card>
           </a>
+					{/*
           {filteredSubjects.map((subj) => (
-						<a href={`/admin/class/${subj.id}`}> 
-							<Card
-								key={subj.id}
-								className="cursor-pointer hover:shadow-lg transition-shadow"
-							>
-								<CardContent className="flex items-center justify-center text-center p-4 h-28 w-full min-w-[120px] sm:min-w-[140px] min-h-[112px] sm:min-h-[112px] text-lg sm:text-xl font-medium break-words">
-									{subj.name}
-								</CardContent>
-							</Card>
-						</a>
+            <a href={`/admin/class/${subj.id}`}>
+              <Card
+                key={subj.id}
+                className="cursor-pointer hover:shadow-lg transition-shadow"
+              >
+                <CardContent className="flex items-center justify-center text-center p-4 h-28 w-full min-w-[120px] sm:min-w-[140px] min-h-[112px] sm:min-h-[112px] text-lg sm:text-xl font-medium break-words">
+                  {subj.name}
+                </CardContent>
+              </Card>
+            </a>
           ))}
+					*/}
         </div>
       </div>
     </div>
