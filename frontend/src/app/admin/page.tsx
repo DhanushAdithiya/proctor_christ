@@ -7,41 +7,16 @@ import { useState, useEffect, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import BreadCrumbs from "../components/breadcrumbs";
 import { usePathname } from "next/navigation";
-import { getAllClasses, getAllEvaluatorClasses } from "@/app/actions/fetchClassDetails";
+import { getAllEvaluatorClasses } from "@/app/actions/fetchClassDetails";
 import { getFormattedTime } from "../actions/helpers";
+import { populateData } from "../actions/helpers";
 
 
 export interface SubjectData {
   name: string;
-  id: number;
+  classCode: number;
 }
 
-function populateData(dbResponse: any[]) {
-  const batches = new Set<string>();
-  const years = new Set<number>();
-  const subjects: SubjectData[] = [];
-
-  dbResponse.forEach((element: any) => {
-    if (element.class) {
-      batches.add(element.class);
-    }
-    if (element.batch) {
-      years.add(element.batch);
-    }
-    if (element.name && element.classCode) {
-      // Avoid duplicate subjects
-      if (!subjects.some((s) => s.id === element.classCode)) {
-        subjects.push({ name: element.name, id: element.classCode });
-      }
-    }
-  });
-
-  return {
-    batches: Array.from(batches).sort((a, b) => a.localeCompare(b)),
-    years: Array.from(years).sort((a, b) => b - a),
-    subjects,
-  };
-}
 
 export default function AdminDashboard() {
   const [selectedBatch, setSelectedBatch] = useState<string>("all");
@@ -71,7 +46,7 @@ export default function AdminDashboard() {
   const filteredSubjects = useMemo(() => {
     return subjects
       .filter((subj) => {
-        const classItem = classes.find((c) => c.classCode === subj.id);
+        const classItem = classes.find((c) => c.classCode === subj.classCode);
         if (!classItem) return false;
         const batchMatch =
           selectedBatch === "all" || classItem.class === selectedBatch;
@@ -203,16 +178,16 @@ export default function AdminDashboard() {
             </Card>
           </a>
           {filteredSubjects.map((subj) => (
-						<a href={`/admin/class/${subj.id}`}> 
-							<Card
-								key={subj.id}
-								className="cursor-pointer hover:shadow-lg transition-shadow"
-							>
-								<CardContent className="flex items-center justify-center text-center p-4 h-28 w-full min-w-[120px] sm:min-w-[140px] min-h-[112px] sm:min-h-[112px] text-lg sm:text-xl font-medium break-words">
-									{subj.name}
-								</CardContent>
-							</Card>
-						</a>
+            <a key={subj.classCode} href={`/admin/class/${subj.classCode}`}>
+              <Card
+                key={subj.classCode}
+                className="cursor-pointer hover:shadow-lg transition-shadow"
+              >
+                <CardContent className="flex items-center justify-center text-center p-4 h-28 w-full min-w-[120px] sm:min-w-[140px] min-h-[112px] sm:min-h-[112px] text-lg sm:text-xl font-medium break-words">
+                  {subj.name}
+                </CardContent>
+              </Card>
+            </a>
           ))}
         </div>
       </div>

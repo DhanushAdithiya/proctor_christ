@@ -1,6 +1,10 @@
 #!/bin/bash
+set -e
 
-# Apply migrations
-npx prisma migrate dev
+# Always regenerate Prisma on container start
+echo "Generating Prisma client..."
+npx prisma generate
 
-exec "$@"
+# Start the application
+echo "Starting application..."
+exec npm run dev

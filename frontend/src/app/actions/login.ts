@@ -20,10 +20,11 @@ export async function loginUser(_: any, formData: FormData) {
     return { error: "Invalid credentials" };
   }
 
+
   return {
     success: true,
-    isAdmin: user.teacher,
-		register: user.registerNumber,
-		name: user.name,
-  };
+    register: user.registerNumber,
+    role: user.role,
+    name: user.name,
+  }
 }

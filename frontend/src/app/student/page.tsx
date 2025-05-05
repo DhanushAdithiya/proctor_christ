@@ -1,13 +1,14 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { getFormattedTime } from "../actions/helpers";
+import { getFormattedTime, populateData } from "../actions/helpers";
 import BreadCrumbs from "../components/breadcrumbs";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { SubjectData } from "../admin/page";
+import { getAllStudentClasses } from "../actions/fetchClassDetails";
 
 export default function StudentDashboard() {
   const [selectedBatch, setSelectedBatch] = useState<string>("all");
@@ -20,6 +21,34 @@ export default function StudentDashboard() {
 
   const register = sessionStorage.getItem("regno");
   const name = sessionStorage.getItem("name");
+
+  useEffect(() => {
+    getAllStudentClasses(register || "").then((data) => {
+      const populated = populateData(data);
+      setClasses(data)
+      setSubjects(data)
+      setBatches(populated.batches);
+      setYears(populated.years);
+      setLoading(false);
+    })
+  }, [])
+
+
+  const filteredSubjects = useMemo(() => {
+    return subjects
+      .filter((subj) => {
+        const classItem = classes.find((c) => c.classCode === subj.classCode);
+        if (!classItem) return false;
+        const batchMatch =
+          selectedBatch === "all" || classItem.class === selectedBatch;
+        const yearMatch =
+          selectedYear === "all" || classItem.batch === Number(selectedYear);
+        return batchMatch && yearMatch;
+      })
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [subjects, classes, selectedBatch, selectedYear]);
+
+
 
   const assignedItems = [
     "Task 1",
@@ -132,11 +161,10 @@ export default function StudentDashboard() {
               </CardContent>
             </Card>
           </a>
-					{/*
           {filteredSubjects.map((subj) => (
-            <a href={`/admin/class/${subj.id}`}>
+            <a key={subj.classCode} href={`/admin/class/${subj.classCode}`}>
               <Card
-                key={subj.id}
+                key={subj.classCode}
                 className="cursor-pointer hover:shadow-lg transition-shadow"
               >
                 <CardContent className="flex items-center justify-center text-center p-4 h-28 w-full min-w-[120px] sm:min-w-[140px] min-h-[112px] sm:min-h-[112px] text-lg sm:text-xl font-medium break-words">
@@ -145,7 +173,7 @@ export default function StudentDashboard() {
               </Card>
             </a>
           ))}
-					*/}
+					
         </div>
       </div>
     </div>

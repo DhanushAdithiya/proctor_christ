@@ -16,22 +16,70 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+
+// Updated Prisma Schema
+
 model User {
-  registerNumber String  @id @unique
-  name          String
-  password      String
-  teacher       Boolean
+  registerNumber    String    @id @unique
+  name              String
+  password          String
+  role              Role      @default(STUDENT)
+  
+  // Subjects where the user is the primary teacher
+  teacherSubjects   Subject[] @relation("TeacherSubjects")
+  
+  // Subjects where the user is enrolled as a student
+  studentSubjects   StudentSubject[]
+  
+  // Subjects where the user is an evaluator
+  evaluatorSubjects EvaluatorSubject[]
+}
+
+enum Role {
+  STUDENT
+  TEACHER
+  // Note: We don't need EVALUATOR as a separate role since
+  // teachers can be evaluators for other subjects
 }
 
 model Subject {
-	classCode Int @id @unique
-	subjectCode String
-	name String
-	class String
-	section String
-	batch Int
-	evaluators String[]
-	students String[]
-	trimester Int
-	teacher Int
+  classCode      Int      @id @unique
+  subjectCode    String
+  name           String
+  class          String
+  section        String
+  batch          Int
+  trimester      Int
+  
+  // Each subject has exactly one teacher
+  teacher        User     @relation("TeacherSubjects", fields: [teacherId], references: [registerNumber])
+  teacherId      String
+  
+  // Each subject can have multiple students
+  students       StudentSubject[]
+  
+  // Each subject can have multiple evaluators
+  evaluators     EvaluatorSubject[]
+}
+
+model StudentSubject {
+  id             String   @id @default(uuid())
+  student        User     @relation(fields: [studentId], references: [registerNumber])
+  studentId      String
+  subject        Subject  @relation(fields: [subjectId], references: [classCode])
+  subjectId      Int
+  enrollmentDate DateTime @default(now())
+  
+  @@unique([studentId, subjectId])
+}
+
+model EvaluatorSubject {
+  id             String   @id @default(uuid())
+  evaluator      User     @relation(fields: [evaluatorId], references: [registerNumber])
+  evaluatorId    String
+  subject        Subject  @relation(fields: [subjectId], references: [classCode])
+  subjectId      Int
+  assignedDate   DateTime @default(now())
+  
+  @@unique([evaluatorId, subjectId])
 }

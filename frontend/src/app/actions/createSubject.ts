@@ -1,17 +1,18 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { addEvaluator } from "./addEvaluators";
 
 export interface Subject {
 	classCode?: number;
 	name: string;
 	subjectCode: string;
 	batch: number;
-	evaluators: string[];
+	evaluators?: string[];
 	class: string;
 	section: string;
 	trimester: number;
-	teacher: number;
+	teacherId: string;
 }
 
 export default async function createSubject(subject: Subject) {
@@ -21,18 +22,24 @@ export default async function createSubject(subject: Subject) {
 		data: {
 			classCode,
 			name: subject.name,
-			subjectCode: subject.subjectCode,
-			class: subject.class,
 			batch: subject.batch,
-			evaluators: subject.evaluators,
-			students: [],
 			section: subject.section,
 			trimester: subject.trimester,
-			teacher: subject.teacher
-		},
-	});
+			subjectCode: subject.subjectCode,
+			class: subject.class,
+			teacherId: subject.teacherId,
+		}
+	})
 
-	if (response ){
+	if (response && subject.evaluators){
+		subject.evaluators.forEach(async (evaluator) => {
+			try {
+				await addEvaluator(evaluator, classCode)
+			} catch (error) {
+				console.error("An error occurred while adding evaluator", error)
+			}
+		})
+
 		return {success: true, code: classCode}
 	} else {
 		return {success: false}

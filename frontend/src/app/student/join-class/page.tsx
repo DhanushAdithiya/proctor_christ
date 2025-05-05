@@ -13,12 +13,18 @@ import {
 import { fetchClassDetails, SubjectResponse } from "@/app/actions/fetchClassDetails";
 import { Subject } from "@/app/actions/createSubject";
 import { cn } from "@/lib/utils";
+import { joinClass } from "@/app/actions/joinClass";
+import { fetchUser, User } from "@/app/actions/users";
+import { useRouter } from "next/navigation";
+
 
 export default function JoinClass() {
   const [classCode, setClassCode] = useState("");
   const [showConfirm, setShowConfirm] = useState(false);
   const [message, setMessage] = useState("");
   const [classDetails, setClassDetails] = useState<Subject | null>(null);
+  const [teacherDetails, setTeacherDetails] = useState<User | null>(null);
+  const router = useRouter();
 
   const handleJoinClick = async () => {
     if (!classCode.trim()) return;
@@ -26,24 +32,31 @@ export default function JoinClass() {
     const res: SubjectResponse = await fetchClassDetails(Number(classCode.trim()));
     
     if (!res.success) {
-      setMessage("Class not found");
       setClassDetails(null);
       setShowConfirm(false);
     } else {
-      setClassDetails(res.response);
+      setClassDetails(res.response || null);
+      const user = await fetchUser(res.response?.teacherId || "");
+      if (user.success) {
+        setTeacherDetails(user.user || null);
+      }
       setShowConfirm(true);
       setMessage("");
     }
   };
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     setShowConfirm(false);
-    // Handle actual join logic here
-    if (classDetails) {
-      alert(`Joined class: ${classDetails.name}`);
-    }
     setClassCode("");
     setClassDetails(null);
+   const res = await joinClass(
+     classDetails?.classCode || 0,
+     sessionStorage.getItem("regno") || ""
+   );
+   if (res.success) {
+    console.log("Joined class");
+    router.push("/student")
+   }
   };
 
   return (
@@ -52,6 +65,7 @@ export default function JoinClass() {
         <h1 className="text-3xl font-bold text-gray-900 mb-6">Join a Class</h1>
         <Input
           placeholder="Enter class code"
+          type="number"
           value={classCode}
           onChange={(e) => {
             setClassCode(e.target.value);
@@ -82,7 +96,7 @@ export default function JoinClass() {
           </DialogHeader>
           <div className="text-gray-700 mb-4 space-y-2">
             <p>Class code: <span className="font-semibold">{classCode}</span></p>
-            <p>Class teacher: <span className="font-semibold">{classDetails?.teacher}</span></p>
+            <p>Class teacher: <span className="font-semibold">{teacherDetails?.name}</span></p>
             {/* TODO: FETCH TEACHER NAME */}
           </div>
           <DialogFooter>

@@ -138,7 +138,7 @@ export default function SubjectPage() {
 		class: className, // 'class' is a reserved word, so we rename it during destructuring
 		section,
 		trimester,
-		teacher,
+		teacherId: teacher,
 	};
 
 	console.log(subject);

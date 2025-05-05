@@ -2,7 +2,7 @@
 
 import { Input } from "../../components/ui/input";
 import { Button } from "../../components/ui/button";
-import { redirect, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useFormState } from "react-dom";
 
@@ -11,19 +11,16 @@ import { loginUser } from "@/app/actions/login";
 export default function Login() {
 	const [state, formAction] = useFormState(loginUser, null);
 	const router = useRouter();
-
-
 	useEffect(() => {
 		if (sessionStorage.getItem("regno")) {
 			router.push((sessionStorage.getItem("teacher") == "yes") ? "/admin" : "/student");
 		}
 
-
 		if (state?.success) {
 			sessionStorage.setItem("regno", state.register)
-			sessionStorage.setItem("teacher", state.isAdmin ? "yes" : "no")
+			sessionStorage.setItem("teacher", (state.role === "TEACHER") ? "yes" : "no")
 			sessionStorage.setItem("name", state.name)
-			router.push(state.isAdmin ? "/admin" : "/student");
+			router.push(state.role === "TEACHER" ? "/admin" : "/student");
 		}
 	}, [state, router]);
 	return (

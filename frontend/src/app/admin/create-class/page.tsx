@@ -17,7 +17,7 @@ import BreadCrumbs from "@/app/components/breadcrumbs";
 import { usePathname } from "next/navigation";
 import createSubject, { Subject } from "@/app/actions/createSubject";
 import { useRouter } from "next/navigation"; // or 'next/router' in older versions
-import { addEvaluator } from "@/app/actions/addEvaluators";
+import { checkEvaluator } from "@/app/actions/addEvaluators";
 
 const CreateSubjectForm = () => {
 	const router = useRouter();
@@ -36,14 +36,19 @@ const CreateSubjectForm = () => {
 
 	const handleAddEvaluator = async () => {
 		if (evaluatorCode.trim()) {
-			const res = await addEvaluator(evaluatorCode.trim());
+			if (evaluatorCode.trim() == sessionStorage.getItem("regno")) {
+				setMessage("You cannot add yourself as an evaluator.");
+				return;
+			}
 
-			if (!res.error) {
+			const res = await checkEvaluator(evaluatorCode.trim());
+
+			if (res.success) {
 				const evals = new Set(evaluators).add(evaluatorCode.trim());
 				setEvaluators([...evals]);
 				setEvaluatorCode("");
 				setMessage(
-					`${res.name} "${evaluatorCode.trim()}" was added as an evaluator.`,
+					`${res.name} - ${evaluatorCode.trim()} was added as an evaluator.`,
 				);
 				setEvaluatorNames([...evaluatorNames, res.name]);
 			} else {
@@ -69,14 +74,14 @@ const CreateSubjectForm = () => {
 			trimester: Number(trimester),
 			evaluators,
 			section,
-			teacher: Number(sessionStorage.getItem("regno"))
+			teacherId: Number(sessionStorage.getItem("regno"))
 		};
 
 		const res = await createSubject(subject);
 		if (res.success) {
 			setIsDialogOpen(false);
 			setMessage("Subject Created");
-			const route = `/class/${res.code}`;
+			const route = `/admin/class/${res.code}`;
 			router.push(route); 
 		} else {
 			setMessage("Issue with server creation");
