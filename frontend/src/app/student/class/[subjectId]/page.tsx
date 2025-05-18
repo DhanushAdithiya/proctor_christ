@@ -1,34 +1,30 @@
 "use client";
 
-import { useEffect, useState } from "react"; // Import useState
+import { useEffect, useState } from "react";
 import BreadCrumbs from "@/app/components/breadcrumbs";
-import { useParams, notFound } from "next/navigation";
+import {  useParams, notFound } from "next/navigation";
 import {fetchClassDetails, SubjectResponse} from "@/app/actions/fetchClassDetails";
 import { Subject } from "@/app/actions/createSubject";
 import PendingAssignments, { Assignment } from "@/app/components/pendingAssignments";
 import SubjectHeader from "@/app/components/subjectHeader";
 import AllAssignments from "@/app/components/allAssignments";
-
-
-const assignments: Assignment[] = [
-	{ id: "lab1", name: "Lab 1", status: "pending" },
-	{ id: "lab2", name: "Lab 2", status: "graded" },
-	{ id: "lab3", name: "Lab 3", status: "pending" },
-	{ id: "project", name: "Project Proposal", status: "completed" },
-	{ id: "quiz1", name: "Quiz 1", status: "graded" },
-];
+import { getAllAssignments, getAllPendingLabsForStudent} from "@/app/actions/fetchAssignments";
 
 
 export default function SubjectPage() {
 	const [classDetails, setClassDetails] = useState<SubjectResponse>();
+	const [assignments, setAssignmetns] = useState<Assignment[]>([]);
+	const [pendingAssignments, setPendingAssignments] = useState<Assignment[]>([]);
 	const slug = useParams();
 	const classId = slug.subjectId;
 
 	useEffect(() => {
 		fetchClassDetails(Number(classId)).then((data) => setClassDetails(data));
+		getAllPendingLabsForStudent(sessionStorage.getItem("regno") || "").then((data) => setPendingAssignments(data));	
+		getAllAssignments(Number(classId)).then((data) => setAssignmetns(data));
 	}, [classId]);
 
-	console.log(classDetails);
+	console.log(assignments)
 	if (!classDetails) {
 		return <h1>Loading...</h1>;
 	}
@@ -61,16 +57,13 @@ export default function SubjectPage() {
 		teacherId,
 	};
 
-	console.log(subject);
-
-
 	return (
 		<div className="min-h-screen bg-white p-12 flex flex-col gap-8">
 			<div className="mb-2">{BreadCrumbs()}</div>
 			<SubjectHeader subject={subject} />
 			<div className="flex flex-col gap-8 w-full">
-				<PendingAssignments assignments={assignments} admin={true} />
-				<AllAssignments assignments={assignments} admin={true} />
+				<PendingAssignments assignments={pendingAssignments} />
+				<AllAssignments assignments={assignments} />
 			</div>
 		</div>
 	);

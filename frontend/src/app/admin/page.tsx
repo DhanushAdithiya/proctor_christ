@@ -8,8 +8,8 @@ import { cn } from "@/lib/utils";
 import BreadCrumbs from "../components/breadcrumbs";
 import { usePathname } from "next/navigation";
 import { getAllEvaluatorClasses } from "@/app/actions/fetchClassDetails";
-import { getFormattedTime } from "../actions/helpers";
-import { populateData } from "../actions/helpers";
+import { getFormattedTime, populateData } from "@/lib/helpers";
+
 
 
 export interface SubjectData {
@@ -79,7 +79,7 @@ export default function AdminDashboard() {
         <h1 className="font-bold text-2xl">{getFormattedTime()}</h1>
       </div>
 
-      {BreadCrumbs(usePathname())}
+      {BreadCrumbs()}
 
       <div className="my-5 bg-gray-100 p-8 rounded-sm">
         <h1 className="font-bold text-2xl mb-4">Assigned</h1>

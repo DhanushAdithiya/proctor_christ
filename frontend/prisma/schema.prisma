@@ -1,24 +1,18 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 // Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider      = "prisma-client-js"
   output        = "../../node_modules/.prisma/client"
   binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
-
 datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
-
-
 // Updated Prisma Schema
-
 model User {
   registerNumber    String    @id @unique
   name              String
@@ -33,6 +27,12 @@ model User {
   
   // Subjects where the user is an evaluator
   evaluatorSubjects EvaluatorSubject[]
+  
+  // Labs created by the teacher
+  createdLabs       Lab[]     @relation("LabCreator")
+  
+  // Lab submissions by students
+  labSubmissions    LabSubmission[]
 }
 
 enum Role {
@@ -60,6 +60,9 @@ model Subject {
   
   // Each subject can have multiple evaluators
   evaluators     EvaluatorSubject[]
+  
+  // Labs associated with this subject
+  labs           Lab[]
 }
 
 model StudentSubject {
@@ -82,4 +85,42 @@ model EvaluatorSubject {
   assignedDate   DateTime @default(now())
   
   @@unique([evaluatorId, subjectId])
+}
+
+model Lab {
+  id              String    @id @default(uuid())
+  name            String
+  description     String
+  submissionDeadline DateTime
+  resourceLink    String[]   // Optional link to downloadable files
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  // Relation to the subject this lab belongs to
+  subject         Subject   @relation(fields: [subjectId], references: [classCode])
+  subjectId       Int
+  
+  // Relation to the teacher who created this lab
+  creator         User      @relation("LabCreator", fields: [creatorId], references: [registerNumber])
+  creatorId       String
+  
+  // Submissions for this lab
+  submissions     LabSubmission[]
+}
+
+model LabSubmission {
+  id              String    @id @default(uuid())
+  submitDate      DateTime  @default(now())
+  submissionLink  String?   // Link to the submitted files/work
+  remarks         String?   // Optional remarks from teacher
+  grade           Float?    // Optional grade
+  
+  // Relations
+  lab             Lab       @relation(fields: [labId], references: [id])
+  labId           String
+  student         User      @relation(fields: [studentId], references: [registerNumber])
+  studentId       String
+  
+  // Each student can only have one submission per lab
+  @@unique([labId, studentId])
 }

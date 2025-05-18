@@ -74,7 +74,7 @@ const CreateSubjectForm = () => {
 			trimester: Number(trimester),
 			evaluators,
 			section,
-			teacherId: Number(sessionStorage.getItem("regno"))
+			teacherId: sessionStorage.getItem("regno") || ""
 		};
 
 		const res = await createSubject(subject);
@@ -94,7 +94,7 @@ const CreateSubjectForm = () => {
 				Create a New Subject
 			</h2>
 
-			{BreadCrumbs(usePathname())}
+			{BreadCrumbs()}
 
 			<div className="h-[80%] p-6 py-10 bg-gray-100 overflow-y-auto">
 				<div className="grid grid-cols-1 md:grid-cols-2 gap-8 h-full">

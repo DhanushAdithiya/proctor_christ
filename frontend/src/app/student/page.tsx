@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { getFormattedTime, populateData } from "../actions/helpers";
+import { getFormattedTime, populateData } from "@/lib/helpers";
 import BreadCrumbs from "../components/breadcrumbs";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -63,7 +63,7 @@ export default function StudentDashboard() {
         <h1 className="font-bold text-2xl">{getFormattedTime()}</h1>
       </div>
 
-      {BreadCrumbs(usePathname())}
+      {BreadCrumbs()}
 
       <div className="my-5 bg-gray-100 p-8 rounded-sm">
         <h1 className="font-bold text-2xl mb-4">Assigned</h1>
@@ -162,7 +162,7 @@ export default function StudentDashboard() {
             </Card>
           </a>
           {filteredSubjects.map((subj) => (
-            <a key={subj.classCode} href={`/admin/class/${subj.classCode}`}>
+            <a key={subj.classCode} href={`/student/class/${subj.classCode}`}>
               <Card
                 key={subj.classCode}
                 className="cursor-pointer hover:shadow-lg transition-shadow"

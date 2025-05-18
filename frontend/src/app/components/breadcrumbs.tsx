@@ -1,4 +1,7 @@
-export default function BreadCrumbs(path: string): React.JSX.Element {
+import { usePathname } from "next/navigation";
+
+export default function BreadCrumbs(): React.JSX.Element {
+  const path = usePathname()
   const url = path.substring(1).split("/");
 
   return (
