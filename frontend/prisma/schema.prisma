@@ -93,6 +93,7 @@ model Lab {
   description     String
   submissionDeadline DateTime
   resourceLink    String[]   // Optional link to downloadable files
+  vivaQuestions   String
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
   
@@ -113,7 +114,11 @@ model LabSubmission {
   submitDate      DateTime  @default(now())
   submissionLink  String?   // Link to the submitted files/work
   remarks         String?   // Optional remarks from teacher
-  grade           Float?    // Optional grade
+  viva            Float     @default(0)
+  timelySubission Float     @default(0)
+  plagarism       Float     @default(0)
+  conceptClarity  Float     @default(0)
+  evaluated       Boolean   @default(false)
   
   // Relations
   lab             Lab       @relation(fields: [labId], references: [id])

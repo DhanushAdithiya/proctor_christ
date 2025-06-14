@@ -40,6 +40,10 @@ export interface UploadedFile {
 import { useParams } from "next/navigation";
 import { date } from "zod";
 
+export interface CreateLabExtended extends CreateLab {
+  questions?: string;
+}
+
 export default function CreateLabPage() {
   const { subjectId } = useParams();
   const [labName, setLabName] = useState("");
@@ -55,6 +59,9 @@ export default function CreateLabPage() {
     ampm: "PM",
   });
   const [instructionFile, setInstructionFile] = useState<UploadedFile | null>(
+    null
+  );
+  const [questionsFile, setQuestionsFile] = useState<UploadedFile | null>(
     null
   );
   const [additionalFiles, setAdditionalFiles] = useState<UploadedFile[]>([]);
@@ -98,6 +105,45 @@ export default function CreateLabPage() {
       };
       setInstructionFile(uploadedFile);
       setMessage(`Instruction file "${file.name}" uploaded.`);
+    }
+  };
+
+  const handleQuestionsFileChange = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Validate file type for questions (text/word files)
+      const allowedTypes = [
+        'text/plain',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      ];
+      
+      if (!allowedTypes.includes(file.type)) {
+        setMessage("Please upload a text file (.txt) or Word document (.doc, .docx) for questions.");
+        return;
+      }
+
+      const res = await uploadFile(
+        file,
+        labName,
+        Number(subjectId),
+        "instructions" ,
+        true 
+      );
+
+      if (res.error) {
+        setMessage(res.error);
+        return;
+      }
+
+      const uploadedFile: UploadedFile = {
+        name: file.name,
+        url: res.url || ""
+      };
+      setQuestionsFile(uploadedFile);
+      setMessage(`Questions file "${file.name}" uploaded.`);
     }
   };
 
@@ -160,25 +206,25 @@ export default function CreateLabPage() {
         )
       : undefined;
 
+    // Prepare lab data with questions
+    const lab: CreateLabExtended = {
+      name: labName,
+      description,
+      submissionDeadline: finalDueDate || new Date(),
+      subjectId: Number(subjectId),
+      creatorId: sessionStorage.getItem("regno") || "",
+      files: [instructionFile?.url || "", ...additionalFiles.map((file) => file.url)],
+      questions: questionsFile?.url || undefined,
+    };
 
-      // TODO: Get the links for the files
-      const lab: CreateLab = {
-        name: labName,
-        description,
-        submissionDeadline: finalDueDate || new Date(),
-        subjectId: Number(subjectId),
-        creatorId: sessionStorage.getItem("regno") || "",
-        files: [instructionFile?.url || "", ...additionalFiles.map((file) => file.url)],
-      }
-
-      console.log(lab)
-      const res = await createLab(lab);
-      if (res.success) {
-        setMessage("Lab Created");
-        router.push(`/admin/class/${subjectId}/lab/${res.id}`);
-      } else {
-        setMessage("Failed to create lab");
-      }
+    console.log(lab);
+    const res = await createLab(lab);
+    if (res.success) {
+      setMessage("Lab Created");
+      router.push(`/admin/class/${subjectId}/lab/${res.id}`);
+    } else {
+      setMessage("Failed to create lab");
+    }
 
     // Reset form
     setLabName("");
@@ -186,6 +232,7 @@ export default function CreateLabPage() {
     setDueDate(undefined);
     setDueTime({ hours: "12", minutes: "00", ampm: "PM" });
     setInstructionFile(null);
+    setQuestionsFile(null);
     setAdditionalFiles([]);
     setIsDialogOpen(false);
     setMessage("Lab Created");
@@ -201,7 +248,7 @@ export default function CreateLabPage() {
     // Call the deleteFile action
     if (fileToRemove?.name) {
       // We only pass the name, adjust as necessary for your backend
-      deleteFile(fileToRemove.name, labName,  Number(subjectId), "additional")
+      deleteFile(fileToRemove.name, labName, Number(subjectId), "additional")
         .then((res) => {
           if (res.error) {
             // If there's an error, revert the UI change and show a message
@@ -239,6 +286,24 @@ export default function CreateLabPage() {
         });
     }
     setInstructionFile(null);
+  };
+
+  const removeQuestionsFile = () => {
+    if (questionsFile?.name) {
+      deleteFile(questionsFile.name, labName, Number(subjectId), "instructions")
+        .then((res) => {
+          if (res.error) {
+            setMessage(`Failed to delete ${questionsFile.name}: ${res.error}`);
+          } else {
+            setMessage(`Questions File "${questionsFile.name}" deleted.`);
+            setQuestionsFile(null);
+          }
+        })
+        .catch((error) => {
+          setMessage(`Error deleting file: ${error.message}`);
+        });
+    }
+    setQuestionsFile(null);
   };
 
   useEffect(() => {
@@ -425,6 +490,53 @@ export default function CreateLabPage() {
 
           <div>
             <Label
+              htmlFor="questionsFile"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Evaluation Questions File
+            </Label>
+            <p className="text-xs text-gray-500 mb-2">
+              Upload a text file (.txt) or Word document (.doc, .docx) containing evaluation questions for this lab.
+            </p>
+            <div className="mt-1 flex items-center gap-4">
+              <Input
+                id="questionsFile"
+                type="file"
+                onChange={handleQuestionsFileChange}
+                className="hidden"
+                accept=".txt,.doc,.docx" // Specify accepted file types for questions
+              />
+              <label htmlFor="questionsFile">
+                <Button variant="outline" asChild>
+                  <div className="flex items-center gap-2">
+                    <UploadCloud className="h-4 w-4" />
+                    <span>Upload Questions</span>
+                  </div>
+                </Button>
+              </label>
+              {questionsFile && (
+                <div className="flex items-center gap-2">
+                  <span
+                    className="text-sm text-gray-600 truncate max-w-[200px]"
+                    title={questionsFile.name}
+                  >
+                    {questionsFile.name}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-red-500 hover:text-red-700"
+                    onClick={removeQuestionsFile}
+                  >
+                    <XCircle className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div>
+            <Label
               htmlFor="additionalFiles"
               className="block text-sm font-medium text-gray-700"
             >
@@ -521,6 +633,10 @@ export default function CreateLabPage() {
                     {instructionFile?.name || "None"}
                   </p>
                   <p>
+                    <span className="font-semibold">Questions File:</span>{" "}
+                    {questionsFile?.name || "None"}
+                  </p>
+                  <p>
                     <span className="font-semibold">Additional Files:</span>{" "}
                     {additionalFiles.length > 0
                       ? additionalFiles.map((file) => file.name).join(", ")
@@ -543,4 +659,3 @@ export default function CreateLabPage() {
     </div>
   );
 }
-

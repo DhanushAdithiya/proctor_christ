@@ -6,14 +6,25 @@ export async function uploadFile(
   file: File,
   labName: string,
   subjectId: number,
-  type: "instructions" | "additional"
+  type: "instructions" | "additional",
+  question: boolean = false
 ): Promise<{url?: string, error?: string}> {
     // replace all spaces with dashes remove all special characters
-    const renamedFile = new File(
-      [file],
-      `${subjectId}-${labName}-${type}-${file.name.replace(/\s+/g, "-").replace(/[^a-zA-Z0-9-]/g, "")}`,
-      { type: file.type }
-    );
+    let renamedFile;
+
+    if (!question) {
+      renamedFile = new File(
+        [file],
+        `${subjectId}-${labName}-${type}-${file.name.replace(/\s+/g, "-").replace(/[^a-zA-Z0-9-]/g, "")}`,
+        { type: file.type }
+      );
+    } else {
+      renamedFile = new File(
+        [file],
+        `question`,
+        { type: file.type }
+      );
+    }
 
   const { data, error } = await supabase.storage
     .from("lab-instructions")

@@ -74,6 +74,32 @@ export async function getPendingLabsForStudentInClass(
   return assignmentList;
 }
 
+
+
+export async function getPendingLabsForTeachersInClass(
+  classCode: number
+) {
+	const res = await prisma.lab.findMany({
+		where: {
+			subjectId: classCode,
+			submissionDeadline: {
+				gte: new Date(),
+			}
+		}
+	})
+	
+	const assignmentList: Assignment[] = [];
+  for (const assignment of res) {
+    assignmentList.push({
+      id: assignment.id,
+      name: assignment.name,
+      status: "pending",
+    });
+  }
+
+  return assignmentList;
+}
+
 // Get pending lab submissions for a student across all classes
 export async function getAllPendingLabsForStudent(studentId: string) {
   // First get all subjects this student is enrolled in
@@ -117,6 +143,7 @@ export async function getAllPendingLabsForStudent(studentId: string) {
       },
     },
   });
+
 
   const assignmentList: Assignment[] = [];
 
